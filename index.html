@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧪 Prompt Alchemy - Transform Basic Prompts into AI Gold</title>
+  <meta name="description" content="Transform basic prompts into AI-optimized masterpieces using platform-specific guidelines for Claude, ChatGPT, Gemini, DeepSeek, Perplexity, Manus, Genspark, and more.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a0a0f;
+      min-height: 100vh;
+    }
+    @keyframes gradientShift { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) translateX(0); }
+      25% { transform: translateY(-20px) translateX(10px); }
+      50% { transform: translateY(-10px) translateX(-10px); }
+      75% { transform: translateY(-30px) translateX(5px); }
+    }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+    @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    button:hover { transform: translateY(-2px); }
+    button:active { transform: translateY(0); }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.4); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.6); }
+    ::selection { background: rgba(245, 158, 11, 0.3); color: #fff; }
+    textarea::placeholder { color: #4B5563; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // AI PLATFORMS DATABASE
+    const AI_PLATFORMS = {
+      claude: {
+        name: "Claude", company: "Anthropic", icon: "🟣", category: "text",
+        color: "#7C3AED", gradient: "linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)",
+        principles: [
+          "Use XML-style tags (<task>, <context>, <rules>, <examples>) for structure",
+          "Be clear and direct - state exactly what you want with scope and success criteria",
+          "Use multishot examples (1-3 examples of input/output format)",
+          "Encourage step-by-step reasoning with <thinking> tags",
+          "Define a system role to anchor behavior and tone",
+          "Prefill response skeletons (start JSON/XML blocks for Claude to complete)",
+          "Place instructions at the END after long documents",
+          "Use anchor phrases like 'Based on the information above...' after context"
+        ],
+        template: (prompt, analysis) => `<role>\nYou are a highly skilled AI assistant specialized in ${analysis.detectedDomain || 'helping users achieve their goals'}.\n</role>\n\n<context>\n${prompt}\n</context>\n\n<task>\nComplete the request described above with accuracy, thoroughness, and attention to detail.\n</task>\n\n<rules>\n1. Be thorough and accurate in your response\n2. If uncertain about anything, acknowledge limitations clearly\n3. Provide actionable and practical information\n4. Structure your response for maximum clarity\n</rules>\n\n<output_format>\nProvide a well-structured response using appropriate formatting for readability.\n</output_format>\n\n<instructions>\nThink through this step-by-step before providing your final response. Consider multiple angles and ensure completeness.\n</instructions>`
+      },
+
+      chatgpt: {
+        name: "ChatGPT", company: "OpenAI", icon: "🟢", category: "text",
+        color: "#10A37F", gradient: "linear-gradient(135deg, #10A37F 0%, #1ED760 100%)",
+        principles: [
+          "Use clear, specific instructions with enough context",
+          "Guide tone and format with descriptive adjectives (formal, friendly, technical)",
+          "Use structured outputs (JSON, tables, markdown) when needed",
+          "For GPT-5+: Consolidate context into one request rather than fragmenting",
+          "Define agent persona for customer-facing tasks",
+          "Use action verbs and explicit role definitions",
+          "Include verification steps for high-impact operations",
+          "Request parallel tool usage explicitly when applicable"
+        ],
+        template: (prompt, analysis) => `# Role\nYou are a knowledgeable and helpful AI assistant${analysis.detectedDomain ? ` specializing in ${analysis.detectedDomain}` : ''}.\n\n# Task\n${prompt}\n\n# Instructions\n1. Carefully analyze the request and identify all requirements\n2. Provide a comprehensive, well-organized response\n3. Ensure accuracy and cite sources when making factual claims\n4. Use clear formatting to enhance readability\n\n# Output Format\nProvide a structured response with appropriate headings, bullet points, or numbered lists where helpful.\n\n# Quality Standards\n- Be thorough yet concise\n- Acknowledge any limitations or uncertainties\n- Offer actionable recommendations when applicable\n- Maintain a professional and helpful tone`
+      },
+
+      gemini: {
+        name: "Gemini", company: "Google", icon: "🔵", category: "text",
+        color: "#4285F4", gradient: "linear-gradient(135deg, #4285F4 0%, #34A853 50%, #FBBC04 100%)",
+        principles: [
+          "Be precise and direct - avoid unnecessary or persuasive language",
+          "Use consistent structure with XML-style tags or Markdown headings",
+          "Explicitly define ambiguous terms or parameters",
+          "Control output verbosity - request conversational responses explicitly if needed",
+          "Place instructions at the END after large context blocks",
+          "Use anchor phrases: 'Based on the information above...'",
+          "For Gemini 3: favors directness over persuasion, logic over verbosity",
+          "Provide few-shot examples showing exact input/output format"
+        ],
+        template: (prompt, analysis) => `<role>\nYou are a precise and analytical assistant${analysis.detectedDomain ? ` with expertise in ${analysis.detectedDomain}` : ''}.\n</role>\n\n<context>\n${prompt}\n</context>\n\n<constraints>\n- Verbosity: Medium (provide sufficient detail without unnecessary padding)\n- Tone: Professional and direct\n- Approach: Logical, evidence-based reasoning\n</constraints>\n\n<output_format>\nProvide a structured, clear response that directly addresses the request.\n</output_format>\n\nBased on the information above, complete this task with precision, clarity, and thoroughness.`
+      },
+
+      deepseek: {
+        name: "DeepSeek", company: "DeepSeek AI", icon: "🐋", category: "text",
+        color: "#0066FF", gradient: "linear-gradient(135deg, #0066FF 0%, #00D4FF 100%)",
+        principles: [
+          "For DeepSeek-R1: Use NO system prompt and NO few-shot examples",
+          "Keep prompts minimal - the model generates chain-of-thought automatically",
+          "Temperature: 0.5-0.7 (0.6 optimal) to prevent reasoning loops",
+          "For math: End with 'put your final answer within \\\\boxed{}'",
+          "State clear requirements and output format, but don't over-elaborate",
+          "For DeepSeek-V3: Traditional prompting with system prompts works",
+          "Use markdown or XML tags to structure complex requests (V3 only)",
+          "For JSON output: Include 'json' in prompt plus example format"
+        ],
+        template: (prompt, analysis) => {
+          if (analysis.isMathOrLogic) {
+            return `${prompt}\n\nPlease reason step by step, and put your final answer within \\boxed{}.`;
+          }
+          return `${prompt}\n\nProvide a clear, well-reasoned response. Think through this carefully before answering.`;
+        }
+      },
+
+      perplexity: {
+        name: "Perplexity", company: "Perplexity AI", icon: "🔍", category: "text",
+        color: "#20808D", gradient: "linear-gradient(135deg, #20808D 0%, #5CE1E6 100%)",
+        principles: [
+          "It's a SEARCH ENGINE first - traditional LLM techniques backfire",
+          "Avoid few-shot examples (triggers searches for your examples)",
+          "Don't use persona roleplay ('Act as...') - confuses search",
+          "Use search-friendly keywords that would appear on relevant web pages",
+          "Add 2-3 extra words of context to dramatically improve results",
+          "Add fail-fast clause: 'If you cannot find reliable sources, say so explicitly'",
+          "Don't ask for URLs - the model will hallucinate them",
+          "Use Pro Search for complex queries, Deep Research for expert analysis"
+        ],
+        template: (prompt, analysis) => `${prompt}\n\nFocus on finding accurate, up-to-date information from reliable sources. ${analysis.detectedDomain ? `Search specifically for ${analysis.detectedDomain} related content.` : ''}\n\nIf you cannot find reliable sources for any part of this query, explicitly state that rather than speculating.\n\nProvide your response with clear organization and include relevant context from your sources.`
+      },
+
+      manus: {
+        name: "Manus", company: "Manus AI", icon: "🤖", category: "text",
+        color: "#FF6B35", gradient: "linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)",
+        principles: [
+          "Think of prompts as PROJECT BRIEFS for an autonomous agent",
+          "Define OUTCOMES, not step-by-step instructions",
+          "Provide comprehensive context, constraints, and success criteria",
+          "Include uploaded files and relevant background information",
+          "Specify deliverable formats and quality standards",
+          "Let the agent orchestrate execution - don't micromanage",
+          "Works in Linux sandbox with internet - can deploy websites, scrape data",
+          "Save intermediate results to files rather than keeping in memory"
+        ],
+        template: (prompt, analysis) => `## Objective\n${prompt}\n\n## Context & Background\n${analysis.detectedDomain ? `This task relates to ${analysis.detectedDomain}.` : 'Please analyze the request and gather any necessary context.'}\n\n## Requirements\n- Deliver a complete, high-quality solution\n- Document your approach and any decisions made\n- Validate results before finalizing\n\n## Success Criteria\n- The deliverable fully addresses the stated objective\n- Quality meets professional standards\n- All requirements are satisfied\n\n## Deliverables\nPlease provide the completed work along with a brief summary of your approach.`
+      },
+
+      genspark: {
+        name: "Genspark", company: "Genspark AI", icon: "✨", category: "text",
+        color: "#8B5CF6", gradient: "linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)",
+        principles: [
+          "Describe the OUTCOME you want - agent breaks work into sub-tasks automatically",
+          "Uses mixture-of-agents (9 LLMs) - routes to optimal model per task",
+          "Specify output format explicitly: AI Slides, AI Sheets, HTML, reports",
+          "Include: Role/identity, Objective, Instructions, Example outputs, Context",
+          "Use 'Fact check content' feature for generated data",
+          "Super Agent handles complex workflows autonomously",
+          "Can make actual phone calls with 'Call for Me' feature",
+          "Deep Research mode uses reasoning models across hundreds of sources"
+        ],
+        template: (prompt, analysis) => `## Role\nYou are a highly capable AI assistant${analysis.detectedDomain ? ` with expertise in ${analysis.detectedDomain}` : ''}.\n\n## Objective\n${prompt}\n\n## Instructions\n1. Analyze the request thoroughly\n2. Break down into logical sub-tasks if complex\n3. Execute each component with attention to quality\n4. Validate and cross-check results\n\n## Output Format\nProvide a comprehensive response with clear organization. ${analysis.wantsData ? 'Include data tables or visualizations where helpful.' : ''}\n\n## Context\nThis is a ${analysis.complexity || 'standard'} complexity task. Prioritize accuracy and completeness.`
+      },
+
+      chatgpt_image: {
+        name: "ChatGPT Image", company: "OpenAI", icon: "🎨", category: "image",
+        color: "#FF6B6B", gradient: "linear-gradient(135deg, #FF6B6B 0%, #FFE66D 100%)",
+        principles: [
+          "Structure: Background/Scene → Subject → Key Details → Constraints → Intended Use",
+          "Include intended use case (ad, UI mock, infographic) for appropriate polish",
+          "Put literal text in QUOTES or ALL CAPS, specify typography details",
+          "Start clean and iterate with small, single-change follow-ups",
+          "State exclusions explicitly: 'no watermark', 'no extra text', 'no logos'",
+          "For edits: 'change only X' + 'keep everything else the same'",
+          "Use photography language: lens type, aperture, film grain",
+          "Avoid generic '8K ultra-detailed' - be specific about textures"
+        ],
+        template: (prompt, analysis) => `Create an image with the following specifications:\n\n## Scene & Background\n${analysis.hasBackground ? prompt : 'A visually appealing, contextually appropriate setting'}\n\n## Subject\n${prompt}\n\n## Style & Aesthetic\nPhotorealistic rendering with natural lighting. Shot with a 50mm lens at f/2.8, creating shallow depth of field. Natural skin textures, fabric details, and environmental elements. Soft, diffused lighting creating a ${analysis.mood || 'balanced'} atmosphere.\n\n## Technical Specifications\n- High resolution with crisp details\n- Balanced composition following rule of thirds\n- Professional color grading\n\n## Constraints\n- No watermarks or logos\n- No text unless specifically requested\n- Maintain visual coherence throughout`
+      },
+
+      nano_banana: {
+        name: "Nano Banana Pro", company: "Google", icon: "🍌", category: "image",
+        color: "#FBBC04", gradient: "linear-gradient(135deg, #FBBC04 0%, #34A853 100%)",
+        principles: [
+          "Use Subject + Context + Style formula",
+          "DESCRIBE the scene narratively, don't just list keywords",
+          "State-of-the-art text rendering - clearly specify what text should appear",
+          "For text: Limit to 25 characters per element, specify font style",
+          "Style transfer: 'Apply the style of X to Y' or use multi-image reference",
+          "Specify composition and angle: 'extreme close-up', 'low angle shot'",
+          "Use specific details: 'glowing blue optics', 'weathered leather texture'",
+          "Supports up to 4K resolution with aspect ratios from 1:1 to 21:9"
+        ],
+        template: (prompt, analysis) => `## Subject\n${prompt}\n\n## Composition\nMedium shot, eye-level perspective, balanced composition with the subject as the focal point\n\n## Action/State\nIn a natural, dynamic pose that conveys the essence of the scene\n\n## Environment/Location\nSet in a contextually appropriate environment that complements the subject\n\n## Style & Aesthetic\n${analysis.detectedStyle || 'High-quality digital art with attention to lighting, texture, and atmospheric details'}. Rich color palette with professional color grading.\n\n## Technical Details\n- Sharp focus on the main subject\n- Appropriate depth of field\n- Natural, cinematic lighting`
+      },
+
+      veo: {
+        name: "Google Veo 3.1", company: "Google DeepMind", icon: "🎬", category: "video",
+        color: "#EA4335", gradient: "linear-gradient(135deg, #EA4335 0%, #FBBC04 50%, #34A853 100%)",
+        principles: [
+          "Structure: [Cinematography] + [Subject] + [Action] + [Context] + [Style]",
+          "Optimal length: 3-6 sentences (100-150 words)",
+          "Pick ONE main camera movement per prompt (dolly, pan, tracking, crane)",
+          "For dialogue: 'A woman says, \"We have to leave now.\"' (use quotes)",
+          "Sound effects: 'SFX: thunder cracks in the distance'",
+          "Ambient audio: 'Ambient noise: quiet hum of a starship bridge'",
+          "Keep dialogue under 8 seconds of speaking time",
+          "Use timestamp format for multi-shot sequences: [00:00-00:02] Shot description"
+        ],
+        template: (prompt, analysis) => `## Video Prompt\n\n### Cinematography\nSlow dolly forward, creating a cinematic atmosphere. Professional lighting with natural, soft illumination.\n\n### Scene Description\n${prompt}\n\n### Visual Style\nCinematic quality with film-like color grading.\nAspect ratio: 16:9\nFrame rate: 24fps for cinematic feel\n\n### Technical Specifications\n- High resolution output\n- Smooth motion with no artifacts\n- Consistent lighting throughout\n- Natural physics and movement`
+      }
+    };
+
+    // PROMPT ANALYSIS
+    function analyzePrompt(prompt) {
+      const lower = prompt.toLowerCase();
+      let detectedDomain = null;
+      if (/code|program|function|api|debug|software|develop/i.test(prompt)) detectedDomain = 'software development';
+      else if (/market|advertis|brand|campaign|social media|content/i.test(prompt)) detectedDomain = 'marketing and content creation';
+      else if (/business|strategy|analysis|report|financial/i.test(prompt)) detectedDomain = 'business analysis';
+      else if (/creative|story|write|article|blog|essay/i.test(prompt)) detectedDomain = 'creative writing';
+      else if (/data|analytics|statistics|chart|visualization/i.test(prompt)) detectedDomain = 'data analysis';
+      else if (/design|ui|ux|interface|layout/i.test(prompt)) detectedDomain = 'design';
+      else if (/agricult|farm|crop|greenhouse|plant/i.test(prompt)) detectedDomain = 'agriculture and farming';
+
+      let detectedStyle = 'photorealistic';
+      if (/cartoon|anime|animated|illustration/i.test(prompt)) detectedStyle = 'illustrated/cartoon';
+      else if (/oil paint|watercolor|artistic|impressionist/i.test(prompt)) detectedStyle = 'artistic painting';
+      else if (/3d|render|cgi|digital art/i.test(prompt)) detectedStyle = '3D rendered digital art';
+
+      let mood = 'balanced';
+      if (/dramatic|intense|powerful|epic/i.test(prompt)) mood = 'dramatic and intense';
+      else if (/calm|serene|peaceful|tranquil/i.test(prompt)) mood = 'calm and serene';
+      else if (/energetic|vibrant|dynamic|exciting/i.test(prompt)) mood = 'energetic and vibrant';
+
+      return {
+        detectedDomain, detectedStyle, mood,
+        isMathOrLogic: /calculate|solve|equation|math|logic|proof|theorem/i.test(prompt),
+        wantsData: /data|table|chart|statistics|numbers|metrics/i.test(prompt),
+        complexity: prompt.length > 200 ? 'high' : prompt.length > 100 ? 'medium' : 'standard',
+        wordCount: prompt.split(/\s+/).filter(w => w).length
+      };
+    }
+
+    // MAIN APP
+    function PromptAlchemy() {
+      const [inputPrompt, setInputPrompt] = useState('');
+      const [selectedAI, setSelectedAI] = useState('claude');
+      const [activeCategory, setActiveCategory] = useState('all');
+      const [result, setResult] = useState(null);
+      const [copied, setCopied] = useState(false);
+      const [showGuidelines, setShowGuidelines] = useState(false);
+      const [particles, setParticles] = useState([]);
+
+      useEffect(() => {
+        const newParticles = Array.from({ length: 30 }, (_, i) => ({
+          id: i, x: Math.random() * 100, y: Math.random() * 100,
+          size: Math.random() * 4 + 2, duration: Math.random() * 20 + 10, delay: Math.random() * 5
+        }));
+        setParticles(newParticles);
+      }, []);
+
+      const handleOptimize = () => {
+        if (!inputPrompt.trim()) return;
+        const analysis = analyzePrompt(inputPrompt);
+        const platform = AI_PLATFORMS[selectedAI];
+        const optimized = platform.template(inputPrompt, analysis);
+        setResult({ optimized, analysis, platform });
+        setCopied(false);
+      };
+
+      const handleCopy = async () => {
+        if (result?.optimized) {
+          await navigator.clipboard.writeText(result.optimized);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }
+      };
+
+      const filteredPlatforms = Object.entries(AI_PLATFORMS).filter(([key, platform]) => 
+        activeCategory === 'all' || platform.category === activeCategory
+      );
+
+      const categories = [
+        { id: 'all', label: 'All Platforms', icon: '🌐' },
+        { id: 'text', label: 'Text AI', icon: '💬' },
+        { id: 'image', label: 'Image Gen', icon: '🖼️' },
+        { id: 'video', label: 'Video Gen', icon: '🎥' }
+      ];
+
+      return (
+        <div style={{ minHeight: '100vh', background: '#0a0a0f', color: '#e0e0e0', position: 'relative', overflow: 'hidden' }}>
+          {/* Background */}
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: `radial-gradient(ellipse at 20% 20%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 60%)`,
+            animation: 'gradientShift 15s ease infinite', pointerEvents: 'none'
+          }} />
+          
+          {particles.map(p => (
+            <div key={p.id} style={{
+              position: 'fixed', left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size,
+              borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)',
+              animation: `float ${p.duration}s ease-in-out infinite`, animationDelay: `${p.delay}s`, pointerEvents: 'none'
+            }} />
+          ))}
+
+          <div style={{ position: 'relative', zIndex: 1, padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
+            {/* Header */}
+            <header style={{ textAlign: 'center', padding: '40px 0 30px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
+                <div style={{ fontSize: '3.5rem', animation: 'pulse 2s ease-in-out infinite' }}>🧪</div>
+                <h1 style={{
+                  fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: '800',
+                  background: 'linear-gradient(135deg, #F59E0B 0%, #EC4899 30%, #8B5CF6 60%, #3B82F6 100%)',
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                  letterSpacing: '-2px', margin: 0
+                }}>Prompt Alchemy</h1>
+              </div>
+              <p style={{ fontSize: '1.2rem', color: '#9CA3AF', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
+                Transform basic prompts into <span style={{ color: '#F59E0B', fontWeight: '600' }}>AI gold</span> using platform-specific optimization
+              </p>
+            </header>
+
+            {/* Category Tabs */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '25px', flexWrap: 'wrap' }}>
+              {categories.map(cat => (
+                <button key={cat.id} onClick={() => setActiveCategory(cat.id)} style={{
+                  padding: '10px 20px', borderRadius: '50px',
+                  border: activeCategory === cat.id ? '2px solid rgba(245, 158, 11, 0.5)' : '2px solid rgba(255,255,255,0.1)',
+                  background: activeCategory === cat.id ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(236, 72, 153, 0.2) 100%)' : 'rgba(255, 255, 255, 0.03)',
+                  color: activeCategory === cat.id ? '#F59E0B' : '#9CA3AF',
+                  cursor: 'pointer', fontSize: '0.9rem', fontWeight: '500', fontFamily: 'inherit',
+                  transition: 'all 0.3s ease', display: 'flex', alignItems: 'center', gap: '8px'
+                }}>
+                  <span>{cat.icon}</span>{cat.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Main Card */}
+            <div style={{
+              background: 'rgba(20, 20, 30, 0.8)', backdropFilter: 'blur(20px)', borderRadius: '24px',
+              border: '1px solid rgba(255, 255, 255, 0.08)', padding: '32px', boxShadow: '0 25px 80px rgba(0, 0, 0, 0.5)'
+            }}>
+              {/* AI Selector */}
+              <div style={{ marginBottom: '28px' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: '#6B7280', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: '600' }}>
+                  Select Target AI Platform
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px' }}>
+                  {filteredPlatforms.map(([key, platform]) => (
+                    <button key={key} onClick={() => setSelectedAI(key)} style={{
+                      padding: '14px 16px', borderRadius: '14px',
+                      border: selectedAI === key ? `2px solid ${platform.color}` : '2px solid rgba(255, 255, 255, 0.06)',
+                      background: selectedAI === key ? `linear-gradient(135deg, ${platform.color}22 0%, ${platform.color}11 100%)` : 'rgba(255, 255, 255, 0.02)',
+                      color: selectedAI === key ? '#fff' : '#9CA3AF', cursor: 'pointer', fontSize: '0.9rem',
+                      fontFamily: 'inherit', fontWeight: '500', transition: 'all 0.3s ease',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', position: 'relative', overflow: 'hidden'
+                    }}>
+                      {selectedAI === key && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: platform.gradient }} />}
+                      <span style={{ fontSize: '1.5rem' }}>{platform.icon}</span>
+                      <span>{platform.name}</span>
+                      <span style={{ fontSize: '0.7rem', color: '#6B7280' }}>{platform.company}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Guidelines Toggle */}
+              <button onClick={() => setShowGuidelines(!showGuidelines)} style={{
+                background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: '#9CA3AF', padding: '10px 18px', borderRadius: '10px', cursor: 'pointer',
+                fontSize: '0.85rem', fontFamily: 'inherit', marginBottom: '20px', transition: 'all 0.3s ease',
+                display: 'flex', alignItems: 'center', gap: '8px'
+              }}>
+                <span style={{ transform: showGuidelines ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>▶</span>
+                View {AI_PLATFORMS[selectedAI].name} Best Practices
+                <span style={{ background: AI_PLATFORMS[selectedAI].gradient, padding: '2px 8px', borderRadius: '20px', fontSize: '0.7rem', color: '#fff' }}>
+                  {AI_PLATFORMS[selectedAI].principles.length} tips
+                </span>
+              </button>
+
+              {showGuidelines && (
+                <div style={{
+                  background: 'rgba(0, 0, 0, 0.3)', borderRadius: '16px', padding: '24px', marginBottom: '24px',
+                  border: `1px solid ${AI_PLATFORMS[selectedAI].color}33`, animation: 'fadeSlideIn 0.3s ease'
+                }}>
+                  <h3 style={{ margin: '0 0 18px 0', color: AI_PLATFORMS[selectedAI].color, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '1.3rem' }}>{AI_PLATFORMS[selectedAI].icon}</span>
+                    {AI_PLATFORMS[selectedAI].name} Prompting Guidelines
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '10px' }}>
+                    {AI_PLATFORMS[selectedAI].principles.map((principle, idx) => (
+                      <div key={idx} style={{
+                        padding: '12px 16px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '10px',
+                        fontSize: '0.85rem', color: '#D1D5DB', borderLeft: `3px solid ${AI_PLATFORMS[selectedAI].color}`, lineHeight: '1.5'
+                      }}>
+                        <span style={{ color: AI_PLATFORMS[selectedAI].color, fontWeight: '600', marginRight: '8px' }}>{idx + 1}.</span>
+                        {principle}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Input */}
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: '#6B7280', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: '600' }}>
+                  Your Basic Prompt
+                </label>
+                <textarea value={inputPrompt} onChange={(e) => setInputPrompt(e.target.value)}
+                  placeholder={`Enter your prompt here...\n\nExamples:\n• "Write a blog post about AI in agriculture"\n• "Create an image of a futuristic greenhouse"\n• "Generate a video of a drone flying over farmland"`}
+                  style={{
+                    width: '100%', minHeight: '180px', background: 'rgba(0, 0, 0, 0.3)',
+                    border: '2px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '18px',
+                    color: '#E5E7EB', fontSize: '1rem', fontFamily: 'inherit', resize: 'vertical',
+                    outline: 'none', transition: 'all 0.3s ease', lineHeight: '1.6', boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => { e.target.style.borderColor = AI_PLATFORMS[selectedAI].color; }}
+                  onBlur={(e) => { e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'; }}
+                />
+              </div>
+
+              {/* Buttons */}
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '32px' }}>
+                <button onClick={handleOptimize} disabled={!inputPrompt.trim()} style={{
+                  flex: 1, padding: '18px 32px', borderRadius: '14px', border: 'none',
+                  background: inputPrompt.trim() ? AI_PLATFORMS[selectedAI].gradient : 'rgba(255, 255, 255, 0.05)',
+                  color: inputPrompt.trim() ? '#fff' : '#4B5563', fontSize: '1.1rem', fontWeight: '700',
+                  fontFamily: 'inherit', cursor: inputPrompt.trim() ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.3s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
+                }}>
+                  <span style={{ fontSize: '1.3rem' }}>🧪</span> Transmute Prompt
+                  <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>→ {AI_PLATFORMS[selectedAI].name}</span>
+                </button>
+                <button onClick={() => { setInputPrompt(''); setResult(null); }} style={{
+                  padding: '18px 28px', borderRadius: '14px', border: '2px solid rgba(255, 255, 255, 0.1)',
+                  background: 'transparent', color: '#9CA3AF', fontSize: '1rem', fontFamily: 'inherit',
+                  cursor: 'pointer', transition: 'all 0.3s ease'
+                }}>Clear</button>
+              </div>
+
+              {/* Result */}
+              {result && (
+                <div style={{ animation: 'fadeSlideIn 0.5s ease' }}>
+                  <div style={{
+                    background: `linear-gradient(135deg, ${result.platform.color}11 0%, ${result.platform.color}05 100%)`,
+                    borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', border: `1px solid ${result.platform.color}22`
+                  }}>
+                    <h3 style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: result.platform.color, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      ✨ Optimization Complete
+                    </h3>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                      {result.analysis.detectedDomain && (
+                        <span style={{ background: 'rgba(255, 255, 255, 0.08)', padding: '6px 14px', borderRadius: '20px', fontSize: '0.8rem', color: '#D1D5DB' }}>
+                          🎯 Domain: {result.analysis.detectedDomain}
+                        </span>
+                      )}
+                      <span style={{ background: 'rgba(255, 255, 255, 0.08)', padding: '6px 14px', borderRadius: '20px', fontSize: '0.8rem', color: '#D1D5DB' }}>
+                        📊 Complexity: {result.analysis.complexity}
+                      </span>
+                      <span style={{ background: 'rgba(255, 255, 255, 0.08)', padding: '6px 14px', borderRadius: '20px', fontSize: '0.8rem', color: '#D1D5DB' }}>
+                        🎨 Style: {result.analysis.detectedStyle}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ position: 'relative' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                      <label style={{ fontSize: '0.8rem', color: '#6B7280', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '1.2rem' }}>{result.platform.icon}</span>
+                        Optimized for {result.platform.name}
+                      </label>
+                      <button onClick={handleCopy} style={{
+                        padding: '10px 20px', borderRadius: '10px', border: 'none',
+                        background: copied ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' : result.platform.gradient,
+                        color: '#fff', fontSize: '0.85rem', fontWeight: '600', fontFamily: 'inherit',
+                        cursor: 'pointer', transition: 'all 0.3s ease', display: 'flex', alignItems: 'center', gap: '8px'
+                      }}>
+                        {copied ? '✓ Copied!' : '📋 Copy to Clipboard'}
+                      </button>
+                    </div>
+                    <pre style={{
+                      background: 'rgba(0, 0, 0, 0.4)', borderRadius: '16px', padding: '24px', overflow: 'auto',
+                      maxHeight: '500px', fontSize: '0.9rem', lineHeight: '1.7', color: '#D1D5DB',
+                      border: '1px solid rgba(255, 255, 255, 0.05)', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                      fontFamily: "'JetBrains Mono', 'Fira Code', monospace"
+                    }}>
+                      {result.optimized}
+                    </pre>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <footer style={{ textAlign: 'center', marginTop: '50px', padding: '30px', color: '#6B7280', fontSize: '0.85rem' }}>
+              <p style={{ marginBottom: '8px' }}>
+                🧪 <strong style={{ color: '#F59E0B' }}>Prompt Alchemy</strong> — Built with 2025 best practices from
+              </p>
+              <p style={{ color: '#4B5563', fontSize: '0.8rem' }}>
+                Anthropic • OpenAI • Google DeepMind • DeepSeek • Perplexity • Manus • Genspark
+              </p>
+            </footer>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<PromptAlchemy />);
+  </script>
+</body>
+</html>
